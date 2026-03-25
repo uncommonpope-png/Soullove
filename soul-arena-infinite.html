@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>⚔️ SOUL ARENA: INFINITE COMBAT</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2a 50%, #0a1a2a 100%); 
+            color: #fff; 
+            font-family: 'Courier New', monospace; 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 24px;
+            margin-bottom: 30px;
+            border: 2px solid #ffaa44;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #ffaa44, #ff4488, #44aaff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+        }
+        .tagline { color: #aa9977; font-size: 1.2rem; }
+        
+        /* Fighter Creator */
+        .creator-panel {
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #ffaa44;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #ffaa44; margin-bottom: 8px; font-weight: bold; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #ffaa44;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            font-family: monospace;
+        }
+        .create-btn {
+            background: linear-gradient(135deg, #ffaa44, #ff8844);
+            border: none;
+            color: #0a0a1a;
+            padding: 14px 32px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        .create-btn:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(255,170,68,0.5); }
+        
+        /* Fighter Card */
+        .fighter-card {
+            background: rgba(0,0,0,0.7);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #ffaa44;
+            display: none;
+        }
+        .fighter-card.active { display: block; }
+        .fighter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .fighter-name { font-size: 2rem; color: #ffaa44; }
+        .fighter-level { background: #ffaa44; color: #0a0a1a; padding: 8px 20px; border-radius: 20px; font-weight: bold; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-box {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,170,68,0.3);
+        }
+        .stat-label { font-size: 0.8rem; color: #aa9977; margin-bottom: 5px; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: #ffaa44; }
+        
+        /* Action Bar */
+        .action-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+        .action-btn {
+            flex: 1;
+            min-width: 150px;
+            background: rgba(255,170,68,0.2);
+            border: 2px solid #ffaa44;
+            color: #ffaa44;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: #ffaa44; color: #0a0a1a; }
+        .action-btn.fight { background: #ff4444; border-color: #ff4444; color: #fff; }
+        .action-btn.fight:hover { background: #ff6666; }
+        
+        /* Battle Arena */
+        .battle-arena {
+            background: rgba(0,0,0,0.8);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #ff4444;
+            display: none;
+        }
+        .battle-arena.active { display: block; }
+        .battle-field { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .fighter-sprite {
+            width: 150px;
+            height: 200px;
+            background: linear-gradient(135deg, #ffaa44, #ff4488);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .health-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            transition: width 0.3s;
+        }
+        .health-fill.enemy { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        
+        /* Move Buttons */
+        .moves-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+        .move-btn {
+            background: rgba(255,170,68,0.2);
+            border: 1px solid #ffaa44;
+            color: #ffaa44;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .move-btn:hover { background: #ffaa44; color: #0a0a1a; transform: scale(1.02); }
+        .move-name { font-weight: bold; margin-bottom: 5px; }
+        .move-input { font-size: 0.8rem; opacity: 0.7; }
+        .move-damage { font-size: 0.9rem; color: #ff4444; }
+        
+        /* Battle Log */
+        .battle-log {
+            background: rgba(0,0,0,0.5);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+        .log-entry { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .log-entry.critical { color: #ff4444; font-weight: bold; }
+        .log-entry.victory { color: #4ade80; font-weight: bold; }
+        
+        /* Viral Clip */
+        .clip-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            border: 3px solid #ffaa44;
+            z-index: 1000;
+            transition: transform 0.3s;
+        }
+        .clip-notification.active { transform: translate(-50%, -50%) scale(1); }
+        .clip-icon { font-size: 4rem; margin-bottom: 20px; }
+        .clip-title { font-size: 2rem; color: #ffaa44; margin-bottom: 10px; }
+        .clip-stats { display: flex; gap: 30px; margin-top: 20px; }
+        .clip-stat { text-align: center; }
+        .clip-stat-value { font-size: 2rem; font-weight: bold; color: #4ade80; }
+        .clip-stat-label { font-size: 0.8rem; color: #aa9977; }
+        
+        /* Footer */
+        footer { text-align: center; padding: 40px; color: #665533; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+            <h1>⚔️ SOUL ARENA: INFINITE COMBAT</h1>
+            <div class="tagline">Every skill is a fighter. Every coder is a kombatant. Every line of code is a special move.</div>
+        </div>
+        
+        <!-- Fighter Creator -->
+        <div class="creator-panel" id="creatorPanel">
+            <h2 style="color: #ffaa44; margin-bottom: 20px;">🎮 CREATE YOUR FIGHTER</h2>
+            <div class="form-group">
+                <label>FIGHTER NAME</label>
+                <input type="text" id="fighterName" placeholder="Enter your fighter's name">
+            </div>
+            <div class="form-group">
+                <label>FIGHTING TYPE</label>
+                <select id="fighterType">
+                    <option value="rushdown">⚡ Rushdown - Aggressive, fast attacks</option>
+                    <option value="zoner">🎯 Zoner - Long range, control</option>
+                    <option value="grappler">🦾 Grappler - High damage grabs</option>
+                    <option value="tank">🛡️ Tank - High defense</option>
+                    <option value="assassin">🗡️ Assassin - Stealth, crits</option>
+                    <option value="mage">🔮 Mage - Special moves, spells</option>
+                    <option value="hybrid" selected>🌀 Hybrid - Balanced</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>ELEMENT</label>
+                <select id="fighterElement">
+                    <option value="code">&lt;/&gt; Code</option>
+                    <option value="fire">🔥 Fire</option>
+                    <option value="water">💧 Water</option>
+                    <option value="electric">⚡ Electric</option>
+                    <option value="soul">🕯️ Soul</option>
+                    <option value="logic">🧠 Logic</option>
+                    <option value="chaos">🌀 Chaos</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>JOB CLASS</label>
+                <select id="fighterJob">
+                    <option value="coder">💻 Coder</option>
+                    <option value="warrior">⚔️ Warrior</option>
+                    <option value="mage">🔮 Mage</option>
+                    <option value="ninja">🥷 Ninja</option>
+                    <option value="architect">🏛️ Architect</option>
+                </select>
+            </div>
+            <button class="create-btn" onclick="createFighter()">⚔️ ENTER THE ARENA</button>
+        </div>
+        
+        <!-- Fighter Card -->
+        <div class="fighter-card" id="fighterCard">
+            <div class="fighter-header">
+                <div class="fighter-name" id="fighterNameDisplay">YOUR FIGHTER</div>
+                <div class="fighter-level" id="fighterLevelDisplay">Level 1</div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">❤️ HP</div>
+                    <div class="stat-value" id="hpStat">100</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">⚡ MP</div>
+                    <div class="stat-value" id="mpStat">50</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">💪 ATK</div>
+                    <div class="stat-value" id="atkStat">10</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">🛡️ DEF</div>
+                    <div class="stat-value" id="defStat">10</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">💨 SPD</div>
+                    <div class="stat-value" id="spdStat">10</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">✨ XP</div>
+                    <div class="stat-value" id="xpStat">0/100</div>
+                </div>
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <div style="color: #aa9977; margin-bottom: 10px;">TYPE: <span id="typeDisplay" style="color: #ffaa44;"></span></div>
+                <div style="color: #aa9977; margin-bottom: 10px;">ELEMENT: <span id="elementDisplay" style="color: #ffaa44;"></span></div>
+                <div style="color: #aa9977; margin-bottom: 10px;">JOB: <span id="jobDisplay" style="color: #ffaa44;"></span></div>
+            </div>
+            
+            <div class="action-bar">
+                <button class="action-btn fight" onclick="startBattle()">⚔️ FIGHT</button>
+                <button class="action-btn" onclick="train()">💪 TRAIN</button>
+                <button class="action-btn" onclick="explore()">🌍 EXPLORE</button>
+                <button class="action-btn" onclick="evolve()">✨ EVOLVE</button>
+            </div>
+        </div>
+        
+        <!-- Battle Arena -->
+        <div class="battle-arena" id="battleArena">
+            <h2 style="color: #ff4444; margin-bottom: 20px;">⚔️ BATTLE ARENA</h2>
+            
+            <div class="battle-field">
+                <div>
+                    <div class="fighter-sprite" id="playerSprite">👤</div>
+                    <div style="text-align: center; margin-top: 10px;" id="playerNameDisplay">YOU</div>
+                    <div class="health-bar">
+                        <div class="health-fill" id="playerHealth" style="width: 100%"></div>
+                    </div>
+                </div>
+                
+                <div style="font-size: 3rem;">⚔️</div>
+                
+                <div>
+                    <div class="fighter-sprite" id="enemySprite" style="background: linear-gradient(135deg, #ff4444, #8844ff);">👹</div>
+                    <div style="text-align: center; margin-top: 10px;" id="enemyNameDisplay">ENEMY</div>
+                    <div class="health-bar">
+                        <div class="health-fill enemy" id="enemyHealth" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="moves-grid" id="movesGrid"></div>
+            
+            <div class="battle-log" id="battleLog"></div>
+            
+            <button class="action-btn" onclick="endBattle()" style="margin-top: 20px; width: 100%;">🏃 RETREAT</button>
+        </div>
+        
+        <!-- Viral Clip Notification -->
+        <div class="clip-notification" id="clipNotification">
+            <div class="clip-icon">🎬</div>
+            <div class="clip-title">CLIP WENT VIRAL!</div>
+            <div style="color: #aa9977;">Your epic battle is trending!</div>
+            <div class="clip-stats">
+                <div class="clip-stat">
+                    <div class="clip-stat-value" id="clipViews">0</div>
+                    <div class="clip-stat-label">Views</div>
+                </div>
+                <div class="clip-stat">
+                    <div class="clip-stat-value" id="clipShares">0</div>
+                    <div class="clip-stat-label">Shares</div>
+                </div>
+                <div class="clip-stat">
+                    <div class="clip-stat-value" id="clipLikes">0</div>
+                    <div class="clip-stat-label">Likes</div>
+                </div>
+            </div>
+            <button class="create-btn" onclick="closeClip()" style="margin-top: 30px;">🔥 AWESOME!</button>
+        </div>
+    </div>
+    
+    <footer>
+        ⚡ SOUL ARENA: INFINITE COMBAT ⚡<br>
+        Mortal Kombat × Sims × Pokemon × Killer Instinct × Final Fantasy<br>
+        © 2026 PLT Press — Profit · Love · Tax
+    </footer>
+    
+    <script>
+        // Game State
+        let player = null;
+        let enemy = null;
+        let battleActive = false;
+        
+        // Fighter Types
+        const FIGHTER_TYPES = {
+            rushdown: { icon: '⚡', hp: 90, atk: 15, def: 8, spd: 15 },
+            zoner: { icon: '🎯', hp: 85, atk: 12, def: 10, spd: 12 },
+            grappler: { icon: '🦾', hp: 120, atk: 18, def: 10, spd: 6 },
+            tank: { icon: '🛡️', hp: 150, atk: 10, def: 18, spd: 5 },
+            assassin: { icon: '🗡️', hp: 80, atk: 20, def: 6, spd: 18 },
+            mage: { icon: '🔮', hp: 75, atk: 8, def: 6, spd: 10 },
+            hybrid: { icon: '🌀', hp: 100, atk: 12, def: 10, spd: 10 }
+        };
+        
+        // Elements
+        const ELEMENTS = {
+            code: { icon: '</>', strong: ['logic', 'bug'], weak: ['soul', 'inspiration'] },
+            fire: { icon: '🔥', strong: ['code', 'ice'], weak: ['water', 'soul'] },
+            water: { icon: '💧', strong: ['fire', 'metal'], weak: ['electric', 'code'] },
+            electric: { icon: '⚡', strong: ['water', 'metal'], weak: ['earth', 'bug'] },
+            soul: { icon: '🕯️', strong: ['chaos', 'logic'], weak: ['code', 'inspiration'] },
+            logic: { icon: '🧠', strong: ['chaos', 'bug'], weak: ['code', 'soul'] },
+            chaos: { icon: '🌀', strong: ['order', 'logic'], weak: ['soul', 'code'] }
+        };
+        
+        // Moves Database
+        const MOVES = {
+            basic: [
+                { name: 'Code Punch', input: 'X', damage: 8, type: 'physical', element: 'code' },
+                { name: 'Logic Kick', input: 'Y', damage: 10, type: 'physical', element: 'logic' },
+                { name: 'Debug Strike', input: '← → X', damage: 15, type: 'special', element: 'code', effect: 'reveal_weakness' },
+                { name: 'Fire Wall', input: '↓ ↑ Y', damage: 0, type: 'utility', element: 'fire', effect: 'shield' }
+            ],
+            special: [
+                { name: 'HADOUKEN', input: '↓ → X', damage: 25, type: 'special', element: 'fire' },
+                { name: 'SHORYUKEN', input: '→ ↓ ← Y', damage: 30, type: 'special', element: 'fire' },
+                { name: 'Code Delete', input: '← ← X', damage: 35, type: 'special', element: 'code' },
+                { name: 'Soul Drain', input: '↓ ↓ Y', damage: 20, type: 'special', element: 'soul', effect: 'heal' },
+                { name: 'Lightning Storm', input: '→ → X', damage: 28, type: 'special', element: 'electric' },
+                { name: 'Chaos Burst', input: '↑ ↑ Y', damage: 32, type: 'special', element: 'chaos' }
+            ],
+            ultimate: [
+                { name: 'INFINITE LOOP', input: '↓ → ↓ → X', damage: 60, type: 'ultimate', element: 'code' },
+                { name: 'SOUL FORGE', input: '← → ← → Y', damage: 70, type: 'ultimate', element: 'soul' },
+                { name: 'COMBO BREAKER', input: '↓ ↑ ↓ ↑ X', damage: 50, type: 'ultimate', element: 'logic', effect: 'counter' }
+            ],
+            fatality: [
+                { name: 'FATALITY: Stack Overflow', input: 'FATALITY', damage: 999, type: 'fatality', element: 'code' },
+                { name: 'FATALITY: Soul Delete', input: 'FATALITY', damage: 999, type: 'fatality', element: 'soul' },
+                { name: 'BRUTALITY: Code Burn', input: 'BRUTALITY', damage: 999, type: 'fatality', element: 'fire' }
+            ]
+        };
+        
+        // Create Fighter
+        function createFighter() {
+            const name = document.getElementById('fighterName').value || 'Soul Warrior';
+            const type = document.getElementById('fighterType').value;
+            const element = document.getElementById('fighterElement').value;
+            const job = document.getElementById('fighterJob').value;
+            
+            const typeStats = FIGHTER_TYPES[type];
+            
+            player = {
+                name: name,
+                type: type,
+                element: element,
+                job: job,
+                level: 1,
+                xp: 0,
+                xpToNext: 100,
+                hp: typeStats.hp,
+                maxHp: typeStats.hp,
+                mp: 50,
+                maxMp: 50,
+                atk: typeStats.atk,
+                def: typeStats.def,
+                spd: typeStats.spd,
+                moves: [...MOVES.basic],
+                specials: [],
+                ultimates: [],
+                fatalities: []
+            };
+            
+            // Update UI
+            document.getElementById('creatorPanel').style.display = 'none';
+            document.getElementById('fighterCard').classList.add('active');
+            updateFighterUI();
+            
+            console.log(`⚔️ FIGHTER CREATED: ${player.name}`);
+            console.log(`Type: ${FIGHTER_TYPES[type].icon} ${type}`);
+            console.log(`Element: ${ELEMENTS[element].icon} ${element}`);
+            console.log(`Job: ${job}`);
+        }
+        
+        // Update Fighter UI
+        function updateFighterUI() {
+            if (!player) return;
+            
+            document.getElementById('fighterNameDisplay').textContent = player.name;
+            document.getElementById('fighterLevelDisplay').textContent = `Level ${player.level}`;
+            document.getElementById('hpStat').textContent = player.hp;
+            document.getElementById('mpStat').textContent = player.mp;
+            document.getElementById('atkStat').textContent = player.atk;
+            document.getElementById('defStat').textContent = player.def;
+            document.getElementById('spdStat').textContent = player.spd;
+            document.getElementById('xpStat').textContent = `${player.xp}/${player.xpToNext}`;
+            document.getElementById('typeDisplay').textContent = `${FIGHTER_TYPES[player.type].icon} ${player.type}`;
+            document.getElementById('elementDisplay').textContent = `${ELEMENTS[player.element].icon} ${player.element}`;
+            document.getElementById('jobDisplay').textContent = player.job;
+        }
+        
+        // Start Battle
+        function startBattle() {
+            if (!player) return alert('Create a fighter first!');
+            
+            battleActive = true;
+            
+            // Generate enemy
+            const enemyTypes = Object.keys(FIGHTER_TYPES);
+            const enemyElements = Object.keys(ELEMENTS);
+            const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+            const enemyElement = enemyElements[Math.floor(Math.random() * enemyElements.length)];
+            const enemyStats = FIGHTER_TYPES[enemyType];
+            
+            enemy = {
+                name: `Wild ${enemyType} ${enemyElement}`,
+                type: enemyType,
+                element: enemyElement,
+                level: Math.max(1, player.level + Math.floor(Math.random() * 3) - 1),
+                hp: enemyStats.hp * (0.8 + Math.random() * 0.4),
+                maxHp: enemyStats.hp,
+                atk: enemyStats.atk * (0.8 + Math.random() * 0.4),
+                def: enemyStats.def * (0.8 + Math.random() * 0.4),
+                spd: enemyStats.spd * (0.8 + Math.random() * 0.4),
+                moves: [...MOVES.basic]
+            };
+            
+            // Show arena
+            document.getElementById('fighterCard').style.display = 'none';
+            document.getElementById('battleArena').classList.add('active');
+            
+            // Update battle UI
+            document.getElementById('playerNameDisplay').textContent = player.name;
+            document.getElementById('enemyNameDisplay').textContent = enemy.name;
+            document.getElementById('playerSprite').textContent = getFighterEmoji(player.type);
+            document.getElementById('enemySprite').textContent = getFighterEmoji(enemy.type);
+            
+            updateHealthBars();
+            renderMoves();
+            logBattle('⚔️ BATTLE START!');
+            logBattle(`${player.name} vs ${enemy.name} - FIGHT!`);
+        }
+        
+        function getFighterEmoji(type) {
+            const emojis = {
+                rushdown: '🥷',
+                zoner: '🏹',
+                grappler: '🤼',
+                tank: '🛡️',
+                assassin: '🗡️',
+                mage: '🧙',
+                hybrid: '⚔️'
+            };
+            return emojis[type] || '👤';
+        }
+        
+        // Render Moves
+        function renderMoves() {
+            const grid = document.getElementById('movesGrid');
+            const allMoves = [...player.moves, ...player.specials];
+            
+            grid.innerHTML = allMoves.map((move, index) => `
+                <button class="move-btn" onclick="useMove(${index})">
+                    <div class="move-name">${move.name}</div>
+                    <div class="move-input">${move.input}</div>
+                    <div class="move-damage">💥 ${move.damage} DMG</div>
+                </button>
+            `).join('');
+        }
+        
+        // Use Move
+        function useMove(moveIndex) {
+            if (!battleActive) return;
+            
+            const move = player.moves[moveIndex] || player.specials[moveIndex - player.moves.length];
+            if (!move) return;
+            
+            // Player turn
+            let damage = calculateDamage(player, enemy, move);
+            let isCrit = Math.random() > 0.9;
+            if (isCrit) {
+                damage = Math.floor(damage * 1.5);
+                logBattle(`💥 CRITICAL HIT!`, 'critical');
+            }
+            
+            enemy.hp = Math.max(0, enemy.hp - damage);
+            logBattle(`${player.name} uses ${move.name}! ${damage} damage!`);
+            updateHealthBars();
+            
+            // Check victory
+            if (enemy.hp <= 0) {
+                winBattle();
+                return;
+            }
+            
+            // Enemy turn
+            setTimeout(() => {
+                enemyTurn();
+            }, 1000);
+        }
+        
+        // Enemy Turn
+        function enemyTurn() {
+            if (!battleActive) return;
+            
+            const move = enemy.moves[Math.floor(Math.random() * enemy.moves.length)];
+            let damage = calculateDamage(enemy, player, move);
+            
+            player.hp = Math.max(0, player.hp - damage);
+            logBattle(`${enemy.name} uses ${move.name}! ${damage} damage!`);
+            updateHealthBars();
+            
+            // Check defeat
+            if (player.hp <= 0) {
+                loseBattle();
+            }
+        }
+        
+        // Calculate Damage
+        function calculateDamage(attacker, defender, move) {
+            let damage = move.damage + (attacker.atk * 0.5);
+            
+            // Type effectiveness
+            const elementData = ELEMENTS[move.element];
+            if (elementData && elementData.strong.includes(defender.element)) {
+                damage *= 2;
+                logBattle(`🔥 Super effective!`);
+            } else if (elementData && elementData.weak.includes(defender.element)) {
+                damage *= 0.5;
+                logBattle(`💧 Not very effective...`);
+            }
+            
+            // Defense reduction
+            damage = Math.max(1, damage - (defender.def * 0.3));
+            
+            return Math.floor(damage);
+        }
+        
+        // Update Health Bars
+        function updateHealthBars() {
+            const playerPercent = (player.hp / player.maxHp) * 100;
+            const enemyPercent = (enemy.hp / enemy.maxHp) * 100;
+            
+            document.getElementById('playerHealth').style.width = `${playerPercent}%`;
+            document.getElementById('enemyHealth').style.width = `${enemyPercent}%`;
+        }
+        
+        // Log Battle
+        function logBattle(message, type = '') {
+            const log = document.getElementById('battleLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = message;
+            log.insertBefore(entry, log.firstChild);
+        }
+        
+        // Win Battle
+        function winBattle() {
+            battleActive = false;
+            logBattle(`🏆 VICTORY! ${enemy.name} defeated!`, 'victory');
+            
+            // Award XP
+            const xpGained = 30 + Math.floor(player.level * 10);
+            player.xp += xpGained;
+            logBattle(`✨ Gained ${xpGained} XP!`);
+            
+            // Check level up
+            if (player.xp >= player.xpToNext) {
+                levelUp();
+            }
+            
+            // Chance for fatality clip
+            if (Math.random() > 0.7) {
+                setTimeout(() => showViralClip(), 1500);
+            }
+            
+            // Return button
+            setTimeout(() => {
+                document.getElementById('battleArena').classList.remove('active');
+                document.getElementById('fighterCard').style.display = 'block';
+                updateFighterUI();
+            }, 2000);
+        }
+        
+        // Lose Battle
+        function loseBattle() {
+            battleActive = false;
+            logBattle(`💀 DEFEAT! ${player.name} has fallen...`, 'critical');
+            
+            setTimeout(() => {
+                document.getElementById('battleArena').classList.remove('active');
+                document.getElementById('fighterCard').style.display = 'block';
+                player.hp = Math.floor(player.maxHp * 0.5);
+                updateFighterUI();
+            }, 2000);
+        }
+        
+        // Level Up
+        function levelUp() {
+            player.level++;
+            player.xp = 0;
+            player.xpToNext = Math.floor(player.xpToNext * 1.5);
+            
+            // Stat increases
+            player.maxHp += 20;
+            player.hp = player.maxHp;
+            player.maxMp += 10;
+            player.mp = player.maxMp;
+            player.atk += 5;
+            player.def += 5;
+            player.spd += 3;
+            
+            logBattle(`⭐ LEVEL UP! ${player.name} is now level ${player.level}!`, 'victory');
+            
+            // Unlock new move
+            if (player.level >= 5 && player.specials.length === 0) {
+                player.specials.push(MOVES.special[Math.floor(Math.random() * MOVES.special.length)]);
+                logBattle(`🔓 Unlocked new special move!`);
+            }
+            
+            if (player.level >= 10 && player.ultimates.length === 0) {
+                player.ultimates.push(MOVES.ultimate[Math.floor(Math.random() * MOVES.ultimate.length)]);
+                logBattle(`🔓 Unlocked ULTIMATE move!`);
+            }
+        }
+        
+        // Show Viral Clip
+        function showViralClip() {
+            const views = Math.floor(Math.random() * 100000) + 10000;
+            const shares = Math.floor(views * 0.1);
+            const likes = Math.floor(views * 0.3);
+            
+            document.getElementById('clipViews').textContent = views.toLocaleString();
+            document.getElementById('clipShares').textContent = shares.toLocaleString();
+            document.getElementById('clipLikes').textContent = likes.toLocaleString();
+            
+            document.getElementById('clipNotification').classList.add('active');
+        }
+        
+        // Close Clip
+        function closeClip() {
+            document.getElementById('clipNotification').classList.remove('active');
+        }
+        
+        // End Battle
+        function endBattle() {
+            battleActive = false;
+            document.getElementById('battleArena').classList.remove('active');
+            document.getElementById('fighterCard').style.display = 'block';
+        }
+        
+        // Train
+        function train() {
+            if (!player) return alert('Create a fighter first!');
+            
+            const xpGained = 20 + Math.floor(Math.random() * 20);
+            player.xp += xpGained;
+            
+            alert(`💪 Training complete!\nGained ${xpGained} XP!`);
+            
+            if (player.xp >= player.xpToNext) {
+                levelUp();
+            }
+            
+            updateFighterUI();
+        }
+        
+        // Explore
+        function explore() {
+            if (!player) return alert('Create a fighter first!');
+            
+            const locations = [
+                { name: 'Code Canyon', event: 'Found rare code fragments!' },
+                { name: 'Memory Forest', event: 'Discovered ancient wisdom!' },
+                { name: 'The Forge', event: 'Tempered your soul in flames!' },
+                { name: 'Digital Wasteland', event: 'Survived the corruption!' },
+                { name: 'Soul Sanctum', event: 'Communed with eternal souls!' }
+            ];
+            
+            const location = locations[Math.floor(Math.random() * locations.length)];
+            const xpGained = 15 + Math.floor(Math.random() * 15);
+            
+            player.xp += xpGained;
+            
+            alert(`🌍 Exploring ${location.name}...\n\n${location.event}\n✨ Gained ${xpGained} XP!`);
+            
+            if (player.xp >= player.xpToNext) {
+                levelUp();
+            }
+            
+            updateFighterUI();
+        }
+        
+        // Evolve
+        function evolve() {
+            if (!player) return alert('Create a fighter first!');
+            if (player.level < 10) return alert('Need level 10+ to evolve!');
+            
+            const evolutions = {
+                coder: 'Code Master',
+                warrior: 'Battle Lord',
+                mage: 'Archmage',
+                ninja: 'Shadow Master',
+                architect: 'Soul Architect'
+            };
+            
+            const newJob = evolutions[player.job] || 'Legend';
+            player.job = newJob;
+            player.maxHp += 50;
+            player.hp = player.maxHp;
+            player.atk += 15;
+            player.def += 15;
+            
+            alert(`✨ EVOLUTION!\n\n${player.name} evolved into ${newJob}!\n\nAll stats increased!`);
+            
+            updateFighterUI();
+        }
+    </script>
+</body>
+</html>
