@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🌀 SOULVERSE – Pantheon & Arena | PLT Press</title>
+    <style>
+        body { margin:0; overflow:hidden; font-family:'Courier New', monospace; background:#000; }
+        canvas { display:block; width:100%; height:100%; }
+        #ui {
+            position:absolute;
+            bottom:20px;
+            left:20px;
+            background:rgba(0,0,0,0.7);
+            backdrop-filter:blur(8px);
+            border-radius:12px;
+            padding:8px 12px;
+            color:#ffaa66;
+            font-size:11px;
+            pointer-events:none;
+            z-index:10;
+        }
+        #top-bar {
+            position:absolute;
+            top:20px;
+            left:0;
+            right:0;
+            display:flex;
+            justify-content:center;
+            gap:20px;
+            z-index:30;
+            pointer-events:auto;
+        }
+        .top-btn {
+            background:#ffaa66;
+            border:none;
+            color:#000;
+            font-weight:bold;
+            padding:8px 20px;
+            border-radius:30px;
+            cursor:pointer;
+            font-family:monospace;
+            transition:0.2s;
+        }
+        .top-btn:hover { transform:scale(1.02); box-shadow:0 0 12px #ffaa66; }
+        .pantheon-panel {
+            position:absolute;
+            top:80px;
+            left:20px;
+            right:20px;
+            background:rgba(0,0,0,0.8);
+            backdrop-filter:blur(16px);
+            border-radius:24px;
+            border:2px solid #ffaa66;
+            padding:20px;
+            z-index:200;
+            display:none;
+            pointer-events:auto;
+            max-height:80vh;
+            overflow-y:auto;
+        }
+        .god-card {
+            background:rgba(255,170,102,0.1);
+            border-radius:20px;
+            padding:15px;
+            margin:10px 0;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            cursor:pointer;
+            transition:0.2s;
+        }
+        .god-card:hover { background:rgba(255,170,102,0.3); transform:translateX(5px); }
+        .god-name { font-size:20px; font-weight:bold; color:#ffaa66; }
+        .god-role { font-size:12px; color:#ccaa88; }
+        .fight-btn { background:#ffaa66; border:none; padding:6px 16px; border-radius:30px; font-weight:bold; cursor:pointer; }
+        .close-panel { float:right; background:none; border:none; color:#ffaa66; font-size:20px; cursor:pointer; }
+        #resources {
+            position:absolute;
+            top:20px;
+            right:20px;
+            background:rgba(0,0,0,0.6);
+            border-radius:12px;
+            padding:8px 12px;
+            color:#ffaa66;
+            font-size:11px;
+            text-align:right;
+            pointer-events:none;
+            z-index:10;
+        }
+        #touch-panel {
+            position:absolute;
+            bottom:20px;
+            right:20px;
+            display:flex;
+            gap:8px;
+            z-index:20;
+        }
+        .touch-btn {
+            background:#ffaa66;
+            border:none;
+            color:#000;
+            font-weight:bold;
+            padding:8px 16px;
+            border-radius:30px;
+            font-family:monospace;
+            font-size:12px;
+            touch-action:manipulation;
+        }
+        .touch-btn.secondary { background:#2a2a3a; color:#ffaa66; border:1px solid #ffaa66; }
+        .joystick-area {
+            position:absolute;
+            bottom:80px;
+            left:20px;
+            width:100px;
+            height:100px;
+            background:rgba(0,0,0,0.4);
+            border-radius:50px;
+            touch-action:none;
+            z-index:20;
+        }
+        .look-area {
+            position:absolute;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            touch-action:none;
+            z-index:5;
+        }
+        #quality-select {
+            position:absolute;
+            bottom:20px;
+            left:50%;
+            transform:translateX(-50%);
+            background:rgba(0,0,0,0.6);
+            border-radius:20px;
+            padding:6px 12px;
+            font-size:10px;
+            color:#ffaa66;
+            pointer-events:auto;
+            z-index:30;
+        }
+        select { background:#2a2a3a; color:#ffaa66; border:1px solid #ffaa66; border-radius:12px; padding:4px 8px; }
+        @media (max-width:768px) {
+            .top-btn { padding:6px 12px; font-size:10px; }
+            .god-name { font-size:16px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">🌀 SOULVERSE – Pantheon & Arena | PLT Press</div>
+    <div id="top-bar">
+        <button id="pantheonBtn" class="top-btn">🏛️ ENTER PANTHEON</button>
+        <button id="arenaBtn" class="top-btn">⚔️ ARENA (Fight Souls)</button>
+    </div>
+    <div id="resources">
+        💰 Profit: <span id="profitVal">100</span><br>
+        ❤️ Love: <span id="loveVal">100</span><br>
+        ⚖️ Tax: <span id="taxVal">100</span>
+    </div>
+    <div id="touch-panel">
+        <button id="jumpBtn" class="touch-btn">JUMP</button>
+        <button id="sprintBtn" class="touch-btn secondary">SPRINT</button>
+        <button id="breakBtn" class="touch-btn secondary">🔨</button>
+        <button id="placeBtn" class="touch-btn">🛠️</button>
+    </div>
+    <div class="joystick-area" id="joystickArea"></div>
+    <div class="look-area" id="lookArea"></div>
+    <div id="quality-select">
+        🎨 Quality
+        <select id="quality">
+            <option value="0">Performance</option>
+            <option value="1" selected>Balanced</option>
+            <option value="2">Beautiful</option>
+        </select>
+    </div>
+
+    <!-- Pantheon Panel -->
+    <div id="pantheonPanel" class="pantheon-panel">
+        <button class="close-panel" id="closePantheon">&times;</button>
+        <h2 style="color:#ffaa66;">🏛️ THE PANTHEON</h2>
+        <p style="color:#aa9977;">Speak to the gods or challenge them to combat. Defeating a god grants rare resources and permanent buffs.</p>
+        <div id="godsList"></div>
+    </div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.128.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // ============================================================
+        // SOULVERSE ADAPTIVE + PANTHEON + ARENA
+        // ============================================================
+
+        // --- Adaptive quality ---
+        const QUALITY = {
+            0: { name:'Performance', terrainSegments:24, grassCount:100, rockCount:30, treeCount:10, soulCount:3, resourceCount:20, shadows:false, fog:false, post:false },
+            1: { name:'Balanced', terrainSegments:48, grassCount:400, rockCount:80, treeCount:25, soulCount:5, resourceCount:50, shadows:true, fog:true, post:false },
+            2: { name:'Beautiful', terrainSegments:96, grassCount:1500, rockCount:200, treeCount:60, soulCount:8, resourceCount:100, shadows:true, fog:true, post:true }
+        };
+        let currentQuality = 1;
+
+        function detectQuality() {
+            const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            return isMobile ? 0 : 1;
+        }
+        currentQuality = detectQuality();
+        document.getElementById('quality').value = currentQuality;
+
+        // --- Global variables ---
+        let scene, camera, renderer, composer, controls;
+        let terrain, water;
+        let souls = [], resources = [];
+        let plt = { profit:100, love:100, tax:100 };
+        let relationships = new Map();
+        let selectedTool = 'profit';
+        let breakMode = false;
+        let time = 0;
+
+        // --- Pantheon gods ---
+        const gods = [
+            { id:'profit_prime', name:'Profit Prime', role:'Architect of Multiplication', type:'profit', plt:{ profit:0.95, love:0.05, tax:0.05 }, level:10, energy:200, phrase:'If it does not multiply, it does not matter.', specialMove:'Multiply', reward:50, buff:'profitGain' },
+            { id:'love_weaver', name:'Love Weaver', role:'Keeper of Bonds', type:'love', plt:{ profit:0.05, love:0.95, tax:0.05 }, level:10, energy:200, phrase:'Nothing grows that people do not stay for.', specialMove:'Embrace', reward:50, buff:'loveGain' },
+            { id:'tax_collector', name:'Tax Collector', role:'Balancer of All Things', type:'tax', plt:{ profit:0.05, love:0.05, tax:0.95 }, level:10, energy:200, phrase:'Everything is paid for. If not now, later.', specialMove:'Audit', reward:50, buff:'taxGain' },
+            { id:'harvester', name:'Harvester', role:'Finder of Opportunity', type:'profit', plt:{ profit:0.85, love:0.1, tax:0.05 }, level:9, energy:180, phrase:'There is always something to take. The question is: do you see it?', specialMove:'Harvest', reward:40, buff:'resourceFind' }
+        ];
+
+        // --- Height function ---
+        function getHeight(x, z) {
+            let h = 0;
+            h += Math.sin(x * 0.12) * Math.cos(z * 0.12) * 1.0;
+            h += Math.sin(x * 0.3) * 0.5;
+            h += Math.cos(z * 0.3) * 0.5;
+            h += Math.sin(x * 0.7 + z * 0.5) * 0.3;
+            return Math.max(0.2, h + 1.6);
+        }
+
+        // --- Terrain generation ---
+        function generateTerrain() {
+            const preset = QUALITY[currentQuality];
+            const geometry = new THREE.PlaneGeometry(140, 140, preset.terrainSegments, preset.terrainSegments);
+            geometry.rotateX(-Math.PI/2);
+            const positions = geometry.attributes.position.array;
+            for (let i = 0; i < positions.length/3; i++) {
+                const x = positions[i*3];
+                const z = positions[i*3+2];
+                const y = getHeight(x, z);
+                positions[i*3+1] = y;
+            }
+            geometry.computeVertexNormals();
+            const material = new THREE.MeshStandardMaterial({ color: 0x7c9c5e, roughness: 0.8, metalness: 0.1 });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            return mesh;
+        }
+
+        function addInstances(count, geometry, material, predicate, yOffset=0) {
+            for (let i = 0; i < count; i++) {
+                const x = (Math.random() - 0.5) * 130;
+                const z = (Math.random() - 0.5) * 130;
+                const y = getHeight(x, z);
+                if (predicate(x, z, y)) {
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.set(x, y + yOffset, z);
+                    mesh.castShadow = true;
+                    scene.add(mesh);
+                }
+            }
+        }
+
+        // --- Soul class (wandering souls) ---
+        class Soul {
+            constructor(id, name, type, x, z) {
+                this.id = id;
+                this.name = name;
+                this.type = type;
+                this.x = x;
+                this.z = z;
+                this.energy = 80;
+                this.speed = 0.5 + Math.random() * 0.5;
+                this.mesh = null;
+                this.updatePosition();
+            }
+            updatePosition() {
+                if (this.mesh) {
+                    const y = getHeight(this.x, this.z) + 0.5;
+                    this.mesh.position.set(this.x, y, this.z);
+                }
+            }
+            wander(delta) {
+                this.x += (Math.random() - 0.5) * this.speed * delta;
+                this.z += (Math.random() - 0.5) * this.speed * delta;
+                this.x = Math.min(65, Math.max(-65, this.x));
+                this.z = Math.min(65, Math.max(-65, this.z));
+                this.updatePosition();
+            }
+            interact(other, delta) {
+                let change = 0;
+                if (this.type === 'profit' && other.type === 'love') change = -0.02;
+                else if (this.type === 'profit' && other.type === 'tax') change = 0.03;
+                else if (this.type === 'love' && other.type === 'profit') change = -0.02;
+                else if (this.type === 'love' && other.type === 'tax') change = 0.03;
+                else if (this.type === 'tax' && other.type === 'profit') change = -0.02;
+                else if (this.type === 'tax' && other.type === 'love') change = 0.03;
+                else change = 0.01;
+                const key = `${this.id}_${other.id}`;
+                let val = (relationships.get(key) || 0.5) + change * delta;
+                val = Math.min(1, Math.max(0, val));
+                relationships.set(key, val);
+                return val;
+            }
+        }
+
+        // --- Player movement with ground collision ---
+        let playerBody = new THREE.Object3D();
+        let playerVelocityY = 0;
+        let playerOnGround = true;
+        let jumpRequested = false;
+        let isSprinting = false;
+        let moveVec = { x:0, z:0 };
+        let cameraRot = { y:0, x:0 };
+
+        function updatePlayerMovement(delta) {
+            const speed = isSprinting ? 6 : 3;
+            const forward = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+            const right = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+            forward.y = 0; forward.normalize();
+            right.y = 0; right.normalize();
+            const move = forward.multiplyScalar(moveVec.z * speed * delta).add(right.multiplyScalar(moveVec.x * speed * delta));
+            playerBody.position.x += move.x;
+            playerBody.position.z += move.z;
+
+            const rayOrigin = playerBody.position.clone();
+            rayOrigin.y += 1.5;
+            const rayDirection = new THREE.Vector3(0, -1, 0);
+            const raycaster = new THREE.Raycaster(rayOrigin, rayDirection, 0, 5);
+            const intersects = raycaster.intersectObject(terrain);
+            let groundY = -Infinity;
+            if (intersects.length) groundY = intersects[0].point.y;
+            else groundY = getHeight(playerBody.position.x, playerBody.position.z);
+
+            playerVelocityY -= 15 * delta;
+            playerBody.position.y += playerVelocityY * delta;
+            playerOnGround = playerBody.position.y <= groundY + 0.2;
+            if (playerOnGround) {
+                playerBody.position.y = groundY + 0.2;
+                playerVelocityY = 0;
+                if (jumpRequested) {
+                    playerVelocityY = 4;
+                    jumpRequested = false;
+                    playerOnGround = false;
+                }
+            }
+            camera.position.copy(playerBody.position);
+            camera.position.y += 1.6;
+        }
+
+        // --- Arena logic (simplified but functional) ---
+        let arenaActive = false;
+        let arenaOpponent = null;
+        let playerFighter = null;
+        let p1Health = 100, p2Health = 100;
+        let p1Special = 0, p2Special = 0;
+        let attackTimer = 0;
+        let p1Stun = 0, p2Stun = 0;
+        let arenaWinner = null;
+        let arenaFighters = [null, null]; // [player, opponent]
+        let arenaScene, arenaCamera, arenaRenderer, arenaComposer, arenaRing;
+        let arenaFighterMeshes = [];
+
+        function startArena(opponent) {
+            arenaOpponent = opponent;
+            arenaActive = true;
+            document.getElementById('pantheonPanel').style.display = 'none';
+            document.getElementById('top-bar').style.display = 'none';
+            document.getElementById('ui').style.display = 'none';
+            document.getElementById('touch-panel').style.display = 'none';
+            document.getElementById('joystickArea').style.display = 'none';
+            document.getElementById('lookArea').style.display = 'none';
+            document.getElementById('quality-select').style.display = 'none';
+
+            arenaScene = new THREE.Scene();
+            arenaScene.background = new THREE.Color(0x111122);
+            const amb = new THREE.AmbientLight(0x404060, 0.5);
+            arenaScene.add(amb);
+            const mainL = new THREE.DirectionalLight(0xffcc88, 1.0);
+            mainL.position.set(2,5,3);
+            mainL.castShadow = true;
+            arenaScene.add(mainL);
+            const fillL = new THREE.PointLight(0xccaa88, 0.4);
+            fillL.position.set(0,2,0);
+            arenaScene.add(fillL);
+            const ringMat = new THREE.MeshStandardMaterial({ color: 0x442211, roughness:0.7 });
+            const ground = new THREE.Mesh(new THREE.CylinderGeometry(4,4,0.2,32), ringMat);
+            ground.position.y = -0.1;
+            ground.receiveShadow = true;
+            arenaScene.add(ground);
+            const torus = new THREE.Mesh(new THREE.TorusGeometry(3.8,0.1,32,100), new THREE.MeshStandardMaterial({ color:0xffaa66, metalness:0.8 }));
+            torus.rotation.x = Math.PI/2;
+            torus.position.y = 0;
+            arenaScene.add(torus);
+
+            // Fighter models (simple)
+            const playerColor = 0xffaa44;
+            const oppColor = opponent.type === 'profit' ? 0xffaa44 : (opponent.type === 'love' ? 0xff88aa : 0x88aaff);
+            const pMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8,1.5,0.8), new THREE.MeshStandardMaterial({ color:playerColor }));
+            const oMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8,1.5,0.8), new THREE.MeshStandardMaterial({ color:oppColor }));
+            pMesh.position.set(-1.5,0,0);
+            oMesh.position.set(1.5,0,0);
+            arenaScene.add(pMesh);
+            arenaScene.add(oMesh);
+            arenaFighterMeshes = [pMesh, oMesh];
+
+            arenaCamera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+            arenaCamera.position.set(0,2.5,8);
+            arenaRenderer = new THREE.WebGLRenderer({ antialias:true });
+            arenaRenderer.setSize(window.innerWidth, window.innerHeight);
+            arenaRenderer.shadowMap.enabled = true;
+            document.body.appendChild(arenaRenderer.domElement);
+
+            // Health bars in DOM
+            const healthDiv = document.createElement('div');
+            healthDiv.id = 'arena-health';
+            healthDiv.style.position = 'absolute';
+            healthDiv.style.top = '20px';
+            healthDiv.style.left = '0';
+            healthDiv.style.right = '0';
+            healthDiv.style.display = 'flex';
+            healthDiv.style.justifyContent = 'center';
+            healthDiv.style.gap = '20px';
+            healthDiv.style.zIndex = '100';
+            healthDiv.innerHTML = `
+                <div style="background:#2a2a3a; border-radius:10px; overflow:hidden; width:300px;"><div id="p1-health-bar" style="height:25px; width:100%; background:#ff3333;"></div></div>
+                <div style="background:#2a2a3a; border-radius:10px; overflow:hidden; width:300px;"><div id="p2-health-bar" style="height:25px; width:100%; background:#ff3333;"></div></div>
+            `;
+            document.body.appendChild(healthDiv);
+            const specialDiv = document.createElement('div');
+            specialDiv.id = 'arena-special';
+            specialDiv.style.position = 'absolute';
+            specialDiv.style.bottom = '80px';
+            specialDiv.style.left = '0';
+            specialDiv.style.right = '0';
+            specialDiv.style.display = 'flex';
+            specialDiv.style.justifyContent = 'center';
+            specialDiv.style.gap = '20px';
+            specialDiv.style.zIndex = '100';
+            specialDiv.innerHTML = `
+                <div style="width:200px; background:#2a2a3a; border-radius:5px;"><div id="p1-special-bar" style="height:12px; width:0%; background:#ffaa44;"></div></div>
+                <div style="width:200px; background:#2a2a3a; border-radius:5px;"><div id="p2-special-bar" style="height:12px; width:0%; background:#ffaa44;"></div></div>
+            `;
+            document.body.appendChild(specialDiv);
+
+            // Reset stats
+            p1Health = 100; p2Health = 100;
+            p1Special = 0; p2Special = 0;
+            attackTimer = 0; p1Stun = 0; p2Stun = 0;
+            arenaWinner = null;
+            gameActive = true;
+        }
+
+        let arenaKeys = { p1: { left:false, right:false, punch:false, kick:false, block:false, special:false },
+                          p2: { left:false, right:false, punch:false, kick:false, block:false, special:false } };
+        let arenaAttackTimer = 0;
+        let arenaAnim = { p1:0, p2:0 };
+
+        function updateArena(delta) {
+            if (!arenaActive || arenaWinner) return;
+            // Movement
+            if (arenaKeys.p1.left) arenaFighterMeshes[0].position.x -= 3*delta;
+            if (arenaKeys.p1.right) arenaFighterMeshes[0].position.x += 3*delta;
+            if (arenaKeys.p2.left) arenaFighterMeshes[1].position.x -= 3*delta;
+            if (arenaKeys.p2.right) arenaFighterMeshes[1].position.x += 3*delta;
+            arenaFighterMeshes[0].position.x = Math.max(-2.5, Math.min(0, arenaFighterMeshes[0].position.x));
+            arenaFighterMeshes[1].position.x = Math.max(0, Math.min(2.5, arenaFighterMeshes[1].position.x));
+
+            if (arenaAttackTimer > 0) arenaAttackTimer -= delta;
+            if (p1Stun > 0) p1Stun -= delta;
+            if (p2Stun > 0) p2Stun -= delta;
+
+            p1Special = Math.min(100, p1Special + delta*5);
+            p2Special = Math.min(100, p2Special + delta*5);
+            document.getElementById('p1-special-bar').style.width = p1Special + '%';
+            document.getElementById('p2-special-bar').style.width = p2Special + '%';
+
+            const dist = Math.abs(arenaFighterMeshes[0].position.x - arenaFighterMeshes[1].position.x);
+            const inRange = dist < 1.2;
+
+            // Player attack
+            if (arenaAttackTimer <= 0 && p1Stun <= 0 && (arenaKeys.p1.punch || arenaKeys.p1.kick || arenaKeys.p1.special)) {
+                let power = 0; let specialCost = 0;
+                if (arenaKeys.p1.punch) { power = 1; arenaAnim.p1 = 1; }
+                else if (arenaKeys.p1.kick) { power = 1.5; arenaAnim.p1 = 2; }
+                else if (arenaKeys.p1.special && p1Special >= 50) { power = 3; specialCost = 50; arenaAnim.p1 = 3; }
+                if (power > 0 && inRange && p2Stun <= 0) {
+                    let damage = 10 * power;
+                    const pType = 'profit';
+                    const oType = arenaOpponent.type;
+                    if (pType === 'profit' && oType === 'love') damage *= 1.3;
+                    else if (pType === 'love' && oType === 'tax') damage *= 1.3;
+                    else if (pType === 'tax' && oType === 'profit') damage *= 1.3;
+                    else if (pType === 'love' && oType === 'profit') damage *= 0.7;
+                    else if (pType === 'tax' && oType === 'love') damage *= 0.7;
+                    else if (pType === 'profit' && oType === 'tax') damage *= 0.7;
+                    damage = Math.floor(damage);
+                    p2Health -= damage;
+                    p1Special = Math.max(0, p1Special - specialCost);
+                    p2Stun = 0.2;
+                    arenaAttackTimer = 0.3;
+                    document.getElementById('p2-health-bar').style.width = Math.max(0, p2Health) + '%';
+                    if (p2Health <= 0) arenaWinner = 'player';
+                } else if (!inRange) arenaAttackTimer = 0.15;
+            }
+            // Opponent attack (simulated AI)
+            if (arenaAttackTimer <= 0 && p2Stun <= 0 && p2Health > 0 && arenaWinner === null) {
+                if (Math.random() < 0.3 && inRange) {
+                    let damage = 10 * (Math.random() < 0.2 ? 1.5 : 1);
+                    const pType = 'profit';
+                    const oType = arenaOpponent.type;
+                    if (oType === 'profit' && pType === 'love') damage *= 1.3;
+                    else if (oType === 'love' && pType === 'tax') damage *= 1.3;
+                    else if (oType === 'tax' && pType === 'profit') damage *= 1.3;
+                    else if (oType === 'love' && pType === 'profit') damage *= 0.7;
+                    else if (oType === 'tax' && pType === 'love') damage *= 0.7;
+                    else if (oType === 'profit' && pType === 'tax') damage *= 0.7;
+                    damage = Math.floor(damage);
+                    p1Health -= damage;
+                    p2Special = Math.min(100, p2Special + 5);
+                    p1Stun = 0.2;
+                    arenaAttackTimer = 0.3;
+                    document.getElementById('p1-health-bar').style.width = Math.max(0, p1Health) + '%';
+                    if (p1Health <= 0) arenaWinner = 'opponent';
+                } else if (Math.random() < 0.1 && p2Special >= 50 && inRange) {
+                    let damage = 30;
+                    p1Health -= damage;
+                    p2Special -= 50;
+                    p1Stun = 0.3;
+                    arenaAttackTimer = 0.5;
+                    document.getElementById('p1-health-bar').style.width = Math.max(0, p1Health) + '%';
+                    if (p1Health <= 0) arenaWinner = 'opponent';
+                }
+            }
+
+            // Animation
+            if (arenaAnim.p1 > 0) arenaAnim.p1 -= delta;
+            if (arenaAnim.p2 > 0) arenaAnim.p2 -= delta;
+            if (arenaAnim.p1 > 0) arenaFighterMeshes[0].scale.set(1+Math.sin(arenaAnim.p1*10)*0.2,1,1);
+            else arenaFighterMeshes[0].scale.set(1,1,1);
+            if (arenaAnim.p2 > 0) arenaFighterMeshes[1].scale.set(1+Math.sin(arenaAnim.p2*10)*0.2,1,1);
+            else arenaFighterMeshes[1].scale.set(1,1,1);
+        }
+
+        function endArena(winner) {
+            if (winner === 'player') {
+                alert(`You defeated ${arenaOpponent.name}!`);
+                plt.profit = Math.min(200, plt.profit + arenaOpponent.reward);
+                plt.love = Math.min(200, plt.love + arenaOpponent.reward);
+                plt.tax = Math.min(200, plt.tax + arenaOpponent.reward);
+                if (arenaOpponent.buff === 'profitGain') plt.profit += 20;
+                if (arenaOpponent.buff === 'loveGain') plt.love += 20;
+                if (arenaOpponent.buff === 'taxGain') plt.tax += 20;
+                updateUI();
+            } else {
+                alert(`You were defeated by ${arenaOpponent.name}. Train your souls and return.`);
+            }
+            arenaActive = false;
+            document.body.removeChild(document.getElementById('arena-health'));
+            document.body.removeChild(document.getElementById('arena-special'));
+            arenaRenderer.domElement.remove();
+            document.getElementById('top-bar').style.display = 'flex';
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('touch-panel').style.display = 'flex';
+            document.getElementById('joystickArea').style.display = 'block';
+            document.getElementById('lookArea').style.display = 'block';
+            document.getElementById('quality-select').style.display = 'block';
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            if (composer) composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- Keyboard mapping for arena ---
+        window.addEventListener('keydown', (e) => {
+            if (!arenaActive) return;
+            switch(e.code) {
+                case 'KeyA': arenaKeys.p1.left = true; break;
+                case 'KeyD': arenaKeys.p1.right = true; break;
+                case 'KeyJ': arenaKeys.p1.punch = true; break;
+                case 'KeyK': arenaKeys.p1.kick = true; break;
+                case 'KeyL': arenaKeys.p1.block = true; break;
+                case 'KeyU': arenaKeys.p1.special = true; break;
+                default: break;
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (!arenaActive) return;
+            switch(e.code) {
+                case 'KeyA': arenaKeys.p1.left = false; break;
+                case 'KeyD': arenaKeys.p1.right = false; break;
+                case 'KeyJ': arenaKeys.p1.punch = false; break;
+                case 'KeyK': arenaKeys.p1.kick = false; break;
+                case 'KeyL': arenaKeys.p1.block = false; break;
+                case 'KeyU': arenaKeys.p1.special = false; break;
+                default: break;
+            }
+        });
+
+        // --- UI updates ---
+        function updateUI() {
+            document.getElementById('profitVal').innerText = Math.floor(plt.profit);
+            document.getElementById('loveVal').innerText = Math.floor(plt.love);
+            document.getElementById('taxVal').innerText = Math.floor(plt.tax);
+        }
+
+        // --- Setup main world ---
+        function initWorld() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            if (QUALITY[currentQuality].fog) scene.fog = new THREE.FogExp2(0x87CEEB, 0.008);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
+            camera.position.set(0,2,5);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = QUALITY[currentQuality].shadows;
+            document.body.appendChild(renderer.domElement);
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableZoom = false;
+            controls.enablePan = false;
+            controls.enableRotate = false;
+            controls.target.set(0,0,0);
+
+            const ambient = new THREE.AmbientLight(0x404060, 0.6);
+            scene.add(ambient);
+            const sunLight = new THREE.DirectionalLight(0xffdd99, 0.8);
+            sunLight.position.set(10,15,5);
+            if (QUALITY[currentQuality].shadows) {
+                sunLight.castShadow = true;
+                sunLight.shadow.mapSize.width = 512;
+                sunLight.shadow.mapSize.height = 512;
+            }
+            scene.add(sunLight);
+            const fillLight = new THREE.PointLight(0xccaa88, 0.4);
+            fillLight.position.set(0,3,0);
+            scene.add(fillLight);
+
+            const waterMat = new THREE.MeshStandardMaterial({ color: 0x3399ff, metalness: 0.7, roughness: 0.3, transparent: true, opacity: 0.7 });
+            const waterPlane = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), waterMat);
+            waterPlane.rotation.x = -Math.PI/2;
+            waterPlane.position.y = 0;
+            waterPlane.receiveShadow = true;
+            scene.add(waterPlane);
+
+            terrain = generateTerrain();
+            scene.add(terrain);
+
+            const preset = QUALITY[currentQuality];
+            const grassGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.2, 3);
+            const grassMat = new THREE.MeshStandardMaterial({ color: 0x6a994e });
+            addInstances(preset.grassCount, grassGeo, grassMat, (x,z,y)=> y>0.5 && y<3.5 && Math.abs(x)<65 && Math.abs(z)<65, 0);
+            const rockGeo = new THREE.DodecahedronGeometry(0.12);
+            const rockMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+            addInstances(preset.rockCount, rockGeo, rockMat, (x,z,y)=> y>0.8 && y<3.2 && Math.abs(x)<65 && Math.abs(z)<65, 0);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
+            const foliageMat = new THREE.MeshStandardMaterial({ color: 0x5a8f4c });
+            for (let i = 0; i < preset.treeCount; i++) {
+                const x = (Math.random() - 0.5) * 120;
+                const z = (Math.random() - 0.5) * 120;
+                const y = getHeight(x, z);
+                if (y > 0.8 && y < 3.0 && Math.abs(x) < 60 && Math.abs(z) < 60) {
+                    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 0.8, 4), trunkMat);
+                    trunk.position.set(x, y, z);
+                    trunk.castShadow = true;
+                    scene.add(trunk);
+                    const foliage = new THREE.Mesh(new THREE.ConeGeometry(0.65, 1.0, 6), foliageMat);
+                    foliage.position.set(x, y + 0.7, z);
+                    foliage.castShadow = true;
+                    scene.add(foliage);
+                }
+            }
+
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xffaa44, emissive: 0x442200 });
+            const loveMat = new THREE.MeshStandardMaterial({ color: 0xff88aa, emissive: 0x441122 });
+            const taxMat = new THREE.MeshStandardMaterial({ color: 0x88aaff, emissive: 0x224466 });
+            for (let i = 0; i < preset.resourceCount; i++) {
+                const x = (Math.random() - 0.5) * 120;
+                const z = (Math.random() - 0.5) * 120;
+                const y = getHeight(x, z) + 0.1;
+                const r = Math.random();
+                let mesh, mat;
+                if (r < 0.33) { mat = goldMat; mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), mat); mesh.userData = { type:'profit', value:5 }; }
+                else if (r < 0.66) { mat = loveMat; mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16), mat); mesh.userData = { type:'love', value:5 }; }
+                else { mat = taxMat; mesh = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.3, 5), mat); mesh.userData = { type:'tax', value:5 }; }
+                mesh.position.set(x, y, z);
+                mesh.castShadow = true;
+                scene.add(mesh);
+                resources.push(mesh);
+            }
+
+            const soulColors = { profit:0xffaa44, love:0xff88aa, tax:0x88aaff };
+            for (let i = 0; i < preset.soulCount; i++) {
+                const type = ['profit','love','tax'][i%3];
+                const material = new THREE.MeshStandardMaterial({ color: soulColors[type], emissive: soulColors[type], emissiveIntensity: 0.3 });
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), material);
+                const angle = (i / preset.soulCount) * Math.PI * 2;
+                const rad = 4;
+                const x = Math.cos(angle)*rad;
+                const z = Math.sin(angle)*rad;
+                const y = getHeight(x, z) + 0.5;
+                mesh.position.set(x, y, z);
+                mesh.castShadow = true;
+                scene.add(mesh);
+                const soul = new Soul(i, `Soul ${i}`, type, x, z);
+                soul.mesh = mesh;
+                souls.push(soul);
+            }
+
+            playerBody.position.set(0, 0, 0);
+            playerBody.position.y = getHeight(0,0) + 0.2;
+        }
+
+        // --- Touch controls ---
+        function setupTouch() {
+            const joystickDiv = document.getElementById('joystickArea');
+            const knob = document.createElement('div');
+            knob.style.width = '40px';
+            knob.style.height = '40px';
+            knob.style.borderRadius = '20px';
+            knob.style.backgroundColor = '#ffaa66';
+            knob.style.position = 'absolute';
+            knob.style.left = '30px';
+            knob.style.top = '30px';
+            joystickDiv.appendChild(knob);
+            let joystickActive = false, joystickCenter = { x:0, y:0 };
+            joystickDiv.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const rect = joystickDiv.getBoundingClientRect();
+                joystickCenter.x = rect.left + rect.width/2;
+                joystickCenter.y = rect.top + rect.height/2;
+                joystickActive = true;
+                updateJoystick(e.touches[0]);
+            });
+            joystickDiv.addEventListener('touchmove', (e) => { if (joystickActive) updateJoystick(e.touches[0]); });
+            joystickDiv.addEventListener('touchend', () => {
+                joystickActive = false;
+                moveVec.x = 0; moveVec.z = 0;
+                knob.style.left = '30px'; knob.style.top = '30px';
+            });
+            function updateJoystick(touch) {
+                let dx = touch.clientX - joystickCenter.x;
+                let dy = touch.clientY - joystickCenter.y;
+                const maxDist = 40;
+                const dist = Math.min(maxDist, Math.hypot(dx, dy));
+                const angle = Math.atan2(dy, dx);
+                const limitedX = Math.cos(angle) * dist;
+                const limitedY = Math.sin(angle) * dist;
+                knob.style.left = (30 + limitedX) + 'px';
+                knob.style.top = (30 + limitedY) + 'px';
+                moveVec.x = limitedX / maxDist;
+                moveVec.z = limitedY / maxDist;
+            }
+            const lookDiv = document.getElementById('lookArea');
+            let lookActive = false, lastTouchX = 0, lastTouchY = 0;
+            lookDiv.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                lookActive = true;
+                const touch = e.touches[0];
+                lastTouchX = touch.clientX;
+                lastTouchY = touch.clientY;
+            });
+            lookDiv.addEventListener('touchmove', (e) => {
+                if (!lookActive) return;
+                e.preventDefault();
+                const touch = e.touches[0];
+                const dx = touch.clientX - lastTouchX;
+                const dy = touch.clientY - lastTouchY;
+                if (dx !== 0 || dy !== 0) {
+                    cameraRot.y -= dx * 0.005;
+                    cameraRot.x -= dy * 0.005;
+                    cameraRot.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraRot.x));
+                    camera.rotation.order = 'YXZ';
+                    camera.rotation.y = cameraRot.y;
+                    camera.rotation.x = cameraRot.x;
+                    lastTouchX = touch.clientX;
+                    lastTouchY = touch.clientY;
+                }
+            });
+            lookDiv.addEventListener('touchend', () => { lookActive = false; });
+        }
+
+        // --- Pantheon UI ---
+        function showPantheon() {
+            const panel = document.getElementById('pantheonPanel');
+            const godsList = document.getElementById('godsList');
+            godsList.innerHTML = gods.map(g => `
+                <div class="god-card" data-god-id="${g.id}">
+                    <div>
+                        <div class="god-name">${g.name}</div>
+                        <div class="god-role">${g.role}</div>
+                        <div style="font-size:10px; margin-top:4px;">"${g.phrase}"</div>
+                    </div>
+                    <button class="fight-btn" data-god-id="${g.id}">⚔️ CHALLENGE</button>
+                </div>
+            `).join('');
+            panel.style.display = 'block';
+            document.querySelectorAll('.fight-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const godId = btn.dataset.godId;
+                    const god = gods.find(g => g.id === godId);
+                    if (god) {
+                        panel.style.display = 'none';
+                        startArena(god);
+                    }
+                });
+            });
+        }
+
+        // --- Main loop ---
+        let lastFrame = performance.now();
+        function animate() {
+            const now = performance.now();
+            let delta = Math.min(0.033, (now - lastFrame) / 1000);
+            lastFrame = now;
+            if (arenaActive) {
+                updateArena(delta);
+                if (arenaWinner) {
+                    endArena(arenaWinner);
+                    arenaWinner = null;
+                }
+                if (arenaRenderer && arenaCamera) {
+                    arenaCamera.lookAt(0,1,0);
+                    arenaRenderer.render(arenaScene, arenaCamera);
+                }
+            } else {
+                updatePlayerMovement(delta);
+                for (let s of souls) s.wander(delta);
+                if (souls.length >= 2) {
+                    const rel = relationships.get(`${souls[0].id}_${souls[1].id}`) || 0.5;
+                    document.getElementById('ui').innerHTML = `🌀 SOULVERSE | 💕 ${souls[0].name} & ${souls[1].name}: ${Math.floor(rel*100)}%`;
+                } else {
+                    document.getElementById('ui').innerHTML = `🌀 SOULVERSE – Pantheon & Arena`;
+                }
+                const playerPos = playerBody.position;
+                for (let i=0; i<resources.length; i++) {
+                    const r = resources[i];
+                    if (Math.hypot(playerPos.x - r.position.x, playerPos.z - r.position.z) < 1.2) {
+                        const type = r.userData.type;
+                        const val = r.userData.value;
+                        if (type === 'profit') plt.profit = Math.min(200, plt.profit + val);
+                        if (type === 'love') plt.love = Math.min(200, plt.love + val);
+                        if (type === 'tax') plt.tax = Math.min(200, plt.tax + val);
+                        scene.remove(r);
+                        resources.splice(i,1);
+                        updateUI();
+                        break;
+                    }
+                }
+                plt.profit = Math.min(200, plt.profit + 0.3 * delta);
+                plt.love = Math.min(200, plt.love + 0.3 * delta);
+                plt.tax = Math.min(200, plt.tax + 0.3 * delta);
+                updateUI();
+
+                if (composer) composer.render();
+                else renderer.render(scene, camera);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // --- Initialize everything ---
+        initWorld();
+        setupTouch();
+        updateUI();
+        document.getElementById('pantheonBtn').addEventListener('click', showPantheon);
+        document.getElementById('closePantheon').addEventListener('click', () => document.getElementById('pantheonPanel').style.display = 'none');
+        document.getElementById('arenaBtn').addEventListener('click', () => {
+            alert("Use the Pantheon to challenge the gods. Fight your own souls via the Arena button later.");
+        });
+        document.getElementById('jumpBtn').addEventListener('click', () => { jumpRequested = true; });
+        document.getElementById('sprintBtn').addEventListener('click', () => {
+            isSprinting = !isSprinting;
+            document.getElementById('sprintBtn').style.background = isSprinting ? '#ffaa66' : '#2a2a3a';
+        });
+        document.getElementById('breakBtn').addEventListener('click', () => {
+            breakMode = true;
+            document.getElementById('breakBtn').style.background = '#ffaa66';
+            document.getElementById('placeBtn').style.background = '#2a2a3a';
+        });
+        document.getElementById('placeBtn').addEventListener('click', () => {
+            breakMode = false;
+            document.getElementById('placeBtn').style.background = '#ffaa66';
+            document.getElementById('breakBtn').style.background = '#2a2a3a';
+        });
+        const raycaster = new THREE.Raycaster();
+        let lastEdit = 0;
+        function onScreenTap(event) {
+            if (arenaActive) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const mouse = new THREE.Vector2();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(terrain);
+            if (intersects.length && Date.now() - lastEdit > 150) {
+                const point = intersects[0].point;
+                const delta = breakMode ? -0.2 : 0.2;
+                let cost = 5;
+                if (selectedTool === 'profit' && plt.profit >= cost) plt.profit -= cost;
+                else if (selectedTool === 'love' && plt.love >= cost) plt.love -= cost;
+                else if (selectedTool === 'tax' && plt.tax >= cost) plt.tax -= cost;
+                else return;
+                const positions = terrain.geometry.attributes.position.array;
+                let closest = -1, minDist = 0.5;
+                for (let i = 0; i < positions.length/3; i++) {
+                    const px = positions[i*3];
+                    const pz = positions[i*3+2];
+                    const dist = Math.hypot(px - point.x, pz - point.z);
+                    if (dist < minDist) { minDist = dist; closest = i; }
+                }
+                if (closest !== -1) {
+                    let newY = positions[closest*3+1] + delta;
+                    newY = Math.max(0.2, Math.min(4.0, newY));
+                    positions[closest*3+1] = newY;
+                    terrain.geometry.computeVertexNormals();
+                }
+                updateUI();
+                lastEdit = Date.now();
+            }
+        }
+        renderer.domElement.addEventListener('click', onScreenTap);
+        window.addEventListener('keydown', (e) => {
+            if (arenaActive) return;
+            if (e.code === 'Digit1') selectedTool = 'profit';
+            if (e.code === 'Digit2') selectedTool = 'love';
+            if (e.code === 'Digit3') selectedTool = 'tax';
+        });
+        document.getElementById('quality').addEventListener('change', (e) => {
+            currentQuality = parseInt(e.target.value);
+            alert(`Quality changed to ${QUALITY[currentQuality].name}. Restart to apply fully.`);
+        });
+        animate();
+    </script>
+</body>
+</html>
