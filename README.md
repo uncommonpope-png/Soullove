@@ -4,7 +4,18 @@ Pokemon-style soul catching and living simulation games.
 
 ## 🎮 Games
 
-### 1. Soul World 3D 🌍
+### 1. Soulverse Pantheon 🏛️ (NEW!)
+**3D open world + Mortal Kombat arena**
+- Explore adaptive 3D terrain
+- Meet 4 gods: Profit Prime, Love Weaver, Tax Collector, Harvester
+- Challenge gods to arena fights
+- PLT-based combat with special moves
+- Win to earn resources and buffs
+- Mobile joystick + touch controls
+
+**[Play Now](https://uncommonpope-png.github.io/soul-games/soulverse-pantheon.html)**
+
+### 2. Soul World 3D 🌍
 **3D first-person soul catching game**
 - Explore a 3D world
 - Catch wild souls like Pokemon
@@ -13,7 +24,7 @@ Pokemon-style soul catching and living simulation games.
 
 **[Play Now](https://uncommonpope-png.github.io/soul-games/soul-world-3d.html)**
 
-### 2. Soul Collector 🧬
+### 3. Soul Collector 🧬
 **2D soul catching game**
 - Explore the weave
 - Catch wild souls
@@ -21,7 +32,7 @@ Pokemon-style soul catching and living simulation games.
 
 **[Play Now](https://uncommonpope-png.github.io/soul-games/soul-collector.html)**
 
-### 3. Soul Habitat 🏠
+### 4. Soul Habitat 🏠
 **Soul life simulation**
 - Souls live in rooms
 - Social interactions
@@ -29,14 +40,14 @@ Pokemon-style soul catching and living simulation games.
 
 **[Play Now](https://uncommonpope-png.github.io/soul-games/soul-habitat.html)**
 
-### 4. Soul Habitat Human 👤
+### 5. Soul Habitat Human 👤
 **Human-like soul sim**
 - Advanced soul AI
 - Realistic behaviors
 
 **[Play Now](https://uncommonpope-png.github.io/soul-games/soul-habitat-human.html)**
 
-### 5. Soul Kombat ⚔️
+### 6. Soul Kombat ⚔️
 **Soul battle arena**
 - Turn-based combat
 - PLT scoring system
